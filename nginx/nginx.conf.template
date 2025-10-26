@@ -1,0 +1,83 @@
+# Blue/Green Upstream Configuration
+upstream app_backend {
+    # Primary server - Blue is active by default, Green is backup
+    server app-blue:3000 max_fails=2 fail_timeout=5s;
+    
+    # Backup server - automatically used when primary fails
+    server app-green:3000 backup max_fails=2 fail_timeout=5s;
+    
+    # Connection pooling for performance
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Proxy settings for better performance and reliability
+    proxy_connect_timeout 2s;
+    proxy_send_timeout 5s;
+    proxy_read_timeout 5s;
+    proxy_next_upstream error timeout http_500 http_502 http_503 http_504;
+    proxy_next_upstream_tries 2;
+    proxy_next_upstream_timeout 10s;
+
+    # Preserve original headers
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # Enable HTTP/1.1 keepalive
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+
+    # Main application routes
+    location / {
+        proxy_pass http://app_backend;
+        
+        # Forward all upstream headers to clients
+        proxy_pass_header X-App-Pool;
+        proxy_pass_header X-Release-Id;
+        
+        # Add custom headers for debugging
+        add_header X-Served-By nginx always;
+        add_header X-Upstream-Addr $upstream_addr always;
+    }
+
+    # Health check endpoint
+    location /healthz {
+        proxy_pass http://app_backend/healthz;
+        proxy_pass_header X-App-Pool;
+        proxy_pass_header X-Release-Id;
+    }
+
+    # Version endpoint
+    location /version {
+        proxy_pass http://app_backend/version;
+        proxy_pass_header X-App-Pool;
+        proxy_pass_header X-Release-Id;
+    }
+
+    # Chaos engineering endpoints (for testing)
+    location /chaos/ {
+        proxy_pass http://app_backend;
+        proxy_pass_header X-App-Pool;
+        proxy_pass_header X-Release-Id;
+    }
+
+    # NGINX status endpoint for monitoring
+    location /nginx-status {
+        stub_status on;
+        access_log off;
+        allow 127.0.0.1;
+        allow 172.16.0.0/12;  # Docker networks
+        deny all;
+    }
+
+    # Error pages
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
