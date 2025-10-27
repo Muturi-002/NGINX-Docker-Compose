@@ -7,7 +7,7 @@ env:
     PRIVATE_KEY: ${{ secrets.DEPLOYMENT_PRIVATE_KEY }}
     SSH_USER: ${{ secrets.SSH_USER }}
     SSH_IP: ${{ secrets.SSH_IP }}
-    PROJECT_DIR: NGINX-Docker-Compose"
+    PROJECT_DIR: NGINX-Docker-Compose
 
 jobs:
     setup-deployment:
@@ -33,7 +33,8 @@ jobs:
             - name: Update Project files
               run: |
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
-                    ls -la /home/$SSH_USER/$PROJECT_DIR
+                    cd /home/$SSH_USER/$PROJECT_DIR
+                    git pull
                 '
     docker-check:
         name: Docker and Docker Compose
@@ -46,9 +47,9 @@ jobs:
                 chmod 600 ~/.ssh/deployment.key
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
                     if command -v docker >/dev/null 2>&1 && command -v docker compose >/dev/null 2>&1; then
-                    echo 'Docker and Docker-Compose already installed'
-                    echo Docker Version:$(docker --version)
-                    echo Docker-Compose Version:$(docker compose version)
+                        echo "Docker and Docker-Compose already installed"
+                        echo "Docker Version:$(docker --version)"
+                        echo "Docker-Compose Version:$(docker compose version)"
                     else 
                         echo 'Installing latest versions of Docker and Docker-Compose...'
                         sudo apt install curl ca-certificates -y 
