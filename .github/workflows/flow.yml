@@ -7,7 +7,7 @@ env:
     PRIVATE_KEY: ${{ secrets.DEPLOYMENT_PRIVATE_KEY }}
     SSH_USER: ${{ secrets.SSH_USER }}
     SSH_IP: ${{ secrets.SSH_IP }}
-    PROJECT_DIR: "NGINX-Docker-Compose"
+    
 
 jobs:
     setup-deployment:
@@ -23,7 +23,7 @@ jobs:
             - name: Verify Project Directory Exists
               run: | 
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
-                    if [ -d "/home/ubuntu/$PROJECT_DIR" ]; then
+                    if [ -d "/home/ubuntu/NGINX-Docker-Compose" ]; then
                         echo "Project directory exists."
                     else
                         echo "Project directory does not exist. Exiting."
@@ -33,9 +33,12 @@ jobs:
             - name: Update Project files
               run: |
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
-                    cd /home/ubuntu/$PROJECT_DIR
+                    cd /home/ubuntu/NGINX-Docker-Compose
                     ls -la
-                    git pull origin main
+                    if [ -d ".git" ]; then
+                        echo "GIT found"
+                        git pull origin main
+                    fi
                 '
     docker-check:
         name: Docker and Docker Compose
@@ -52,13 +55,16 @@ jobs:
                         echo "Docker Version:$(docker --version)"
                         echo "Docker-Compose Version:$(docker compose version)"
                     else 
-                        echo "Installing latest versions of Docker and Docker-Compose...""
+                        echo "Installing latest versions of Docker and Docker-Compose..."
                         sudo apt install curl ca-certificates -y 
                         sudo mkdir -p /etc/apt/keyrings
                         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc 
                         sudo chmod a+r /etc/apt/keyrings/docker.asc
                         
-                        echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \$(. /etc/os-releaseecho \"\$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                        echo \
+                        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                        $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+                        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
                         sudo apt-get update
                         sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
