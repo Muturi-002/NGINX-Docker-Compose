@@ -34,7 +34,7 @@ jobs:
               run: |
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
                     cd /home/$SSH_USER/$PROJECT_DIR
-                    git pull
+                    ls -la
                 '
     docker-check:
         name: Docker and Docker Compose
@@ -42,6 +42,7 @@ jobs:
         steps:
             - name: Check Docker and Docker Compose
               run: |
+                mkdir -p ~/.ssh
                 echo "$PRIVATE_KEY" > ~/.ssh/deployment.key
                 chmod 600 ~/.ssh/deployment.key
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
