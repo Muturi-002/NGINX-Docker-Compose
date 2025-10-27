@@ -7,7 +7,7 @@ env:
     PRIVATE_KEY: ${{ secrets.DEPLOYMENT_PRIVATE_KEY }}
     SSH_USER: ${{ secrets.SSH_USER }}
     SSH_IP: ${{ secrets.SSH_IP }}
-    PROJECT_DIR: NGINX-Docker-Compose
+    PROJECT_DIR: "NGINX-Docker-Compose"
 
 jobs:
     setup-deployment:
@@ -23,7 +23,7 @@ jobs:
             - name: Verify Project Directory Exists
               run: | 
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
-                    if [ -d "/home/$SSH_USER/$PROJECT_DIR" ]; then
+                    if [ -d "/home/ubuntu/$PROJECT_DIR" ]; then
                         echo "Project directory exists."
                     else
                         echo "Project directory does not exist. Exiting."
@@ -33,8 +33,9 @@ jobs:
             - name: Update Project files
               run: |
                 ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
-                    cd /home/$SSH_USER/$PROJECT_DIR
-                    git pull
+                    cd /home/ubuntu/$PROJECT_DIR
+                    ls -la
+                    git pull origin main
                 '
     docker-check:
         name: Docker and Docker Compose
@@ -51,7 +52,7 @@ jobs:
                         echo "Docker Version:$(docker --version)"
                         echo "Docker-Compose Version:$(docker compose version)"
                     else 
-                        echo 'Installing latest versions of Docker and Docker-Compose...'
+                        echo "Installing latest versions of Docker and Docker-Compose...""
                         sudo apt install curl ca-certificates -y 
                         sudo mkdir -p /etc/apt/keyrings
                         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc 
