@@ -22,23 +22,24 @@ jobs:
                 chmod 600 ~/.ssh/deployment.key
             - name: Verify Project Directory Exists
               run: | 
-                ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << EOF
+                ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
                     if [ -d "$PROJECT_DIR" ]; then
                         echo "Project directory exists."
                     else
                         echo "Project directory does not exist. Exiting."
                         exit 1
                     fi
-                    EOF
+                '
             - name: Update Project files
               run: |
-                ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP << EOF
+                ssh -i ~/.ssh/deployment.key -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP '
                     cd $PROJECT_DIR
                     git pull
-                    EOF
+                '
     docker-check:
         name: Docker and Docker Compose
         runs-on: ubuntu-24.04
+        needs: setup-deployment
         steps:
             - name: Check Docker and Docker Compose
               run: |
