@@ -68,7 +68,7 @@ In order to truly understand the workings of this project, I have created a pipe
 
 This [article](https://medium.com/@christianashedrack/building-a-zero-downtime-blue-green-deployment-with-nginx-4716f73bdec8) broke down the NGINX part, making the task much easier to understand.
 
-#### ***Note:*** I'll document every thing as much as possible.
+#### ***Note:*** I'll document every thing as much as possible, while breaking down the system itself.
 
 ### CI Pipeline
 *Currently triggered manually*
@@ -78,9 +78,46 @@ This [article](https://medium.com/@christianashedrack/building-a-zero-downtime-b
 
 ### Docker Compose - `docker-compose.yml`
 
+I had to go back to the Docker basics for me to understand the structure of a docker compose file. 
+  - *docker volumes* - persistent data disks for data stored in docker containers
+  - *docker network* - networks defined for communication within the docker daemon
+  - *docker containers* - isolated environments independent of the host's operating systems.
+
+I understood how to define services and resources using a YAML configuration file (*Easier than it looks, if exposed before that is*), and get the necessary configurations in place. [Udemy course on Docker](https://www.udemy.com/share/10dEC33@-NfZuE_32FgF349YvwaSeK92jTrwMzNjBjQ5ZT4jHxme9snP0i2QqnXU9b48QlMEHg==/)
+
 ### NGINX Configuration - `nginx/`
 
+I had not worked on NGINX for a good number of months, so I decided to look for a crash course on how configuration of static files and proxy are done for the web server.
+
+*`nginx.conf`*
+```
+http {
+    listen <port_number>;
+
+    location / {
+      <path-to-html-file>;
+    }
+}
+```
+When defining location for your static files to be rendered,
+- `/` defines the redirection for your website; maps the server to the first page defined
+  
+  `http://localhost/` - shows the first page rendered by your machine's server.
+
+  The `location` block defines the files that will be rendered by your web application. Key words used: root, alias.
+- Reverse Proxy
+  ```
+  # From the previous code
+
+      location / {
+        proxy_pass http://localhost:9000 #Any server communication in port 9000 will be redirected to port 80 (defined on the `listen` variable. NGINX default is 80)
+        proxy_set_header HOST $HOST #Transmit host information ans real IP address
+      }
+
+      location /api {
+        proxy_pass https://localhost:7463 # communication in port 7463 will be redirected to port 80. Accessed where '/api' is part of the URL
+      }
+  ```
+
 ### Script - `manage.sh`
-
-
 
